@@ -1,5 +1,5 @@
 const User = require('./User');
-const Match = require('../Match');
+const Match = require('./Match');
 
 User.hasMany(Match, {
     foreignKey: 'userId',
