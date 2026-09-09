@@ -1,14 +1,28 @@
 const express = require('express');
 const router = express.Router();
+const { Op } = require('sequelize');
 
 const { Match, User } = require('../models');
-const { fetchRandomArtist } = require('../services/wikipedia');
+const {
+    fetchRandomWikipediaArtistArticle,
+    isValidRandomArtistArticleTitle
+} = require('../services/wikipedia');
 const { maskText } = require('../controllers/matchController');
 const { optionalAuthenticateToken } = require('../middlewares/authMiddleware');
+
+function normalizeArtistName(value) {
+    return value
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s*\([^)]*\)\s*$/, '');
+}
 
 
 router.get('/leaderboard', async (req, res) => {
     try {
+        res.set('Cache-Control', 'no-store');
         const wonMatches = await Match.findAll({
             where: { status: 'WON' },
             include: [{
@@ -68,11 +82,18 @@ router.get('/leaderboard', async (req, res) => {
 });
 
 
-router.get('/completed', async (req, res) => {
+router.get('/completed', optionalAuthenticateToken, async (req, res) => {
     try {
+        res.set('Cache-Control', 'no-store');
+        const userId = req.user?.userId ?? null;
+        const guestId = typeof req.headers['x-guest-id'] === 'string'
+            ? req.headers['x-guest-id']
+            : null;
         const completedMatches = await Match.findAll({
             where: {
-                status: ['WON', 'ABANDONED']
+                status: { [Op.in]: ['WON', 'ABANDONED'] },
+                userId,
+                guestId: userId ? null : guestId
             },
             include: [{
                 model: User,
@@ -80,10 +101,13 @@ router.get('/completed', async (req, res) => {
                 attributes: ['username']
             }],
             order: [['endTime', 'DESC']],
-            limit: 50
+            limit: 200
         });
 
-        const formattedMatches = completedMatches.map(m => {
+        const formattedMatches = completedMatches
+            .filter(m => isValidRandomArtistArticleTitle(m.targetTitle))
+            .slice(0, 50)
+            .map(m => {
             const durationInSeconds = m.endTime && m.startTime
                 ? Math.round((new Date(m.endTime) - new Date(m.startTime)) / 1000)
                 : null;
@@ -94,9 +118,11 @@ router.get('/completed', async (req, res) => {
                 attempts: m.attempts,
                 status: m.status,
                 durationSeconds: durationInSeconds,
-                completedAt: m.endTime
+                completedAt: m.endTime,
+                title: m.targetTitle,
+                maskedText: maskText(m.originalText, m.guessedWords || [])
             };
-        });
+            });
 
         res.json(formattedMatches);
     } catch (error) {
@@ -109,13 +135,18 @@ router.get('/completed', async (req, res) => {
 router.post('/new', optionalAuthenticateToken, async (req, res) => {
     try {
         const userId = req.user?.userId ?? null;
+        const guestId = userId ? null : req.headers['x-guest-id'];
 
-        const activeMatch = await Match.findOne({
-            where: { userId, status: 'IN_PROGRESS' },
-            order: [['startTime', 'DESC']]
-        });
+        const activeMatch = userId || guestId
+            ? await Match.findOne({
+                where: { userId, guestId: userId ? null : guestId, status: 'IN_PROGRESS' },
+                order: [['startTime', 'DESC']]
+            })
+            : null;
 
-        if (activeMatch) {
+        if (activeMatch
+            && activeMatch.selectionMode === 'MEDIAWIKI_RANDOM_ARTIST'
+            && isValidRandomArtistArticleTitle(activeMatch.targetTitle)) {
             return res.json({
                 message: "Partita in corso recuperata.",
                 matchId: activeMatch.id,
@@ -123,7 +154,13 @@ router.post('/new', optionalAuthenticateToken, async (req, res) => {
             });
         }
 
-        const artistData = await fetchRandomArtist();
+        if (activeMatch) {
+            activeMatch.status = 'ABANDONED';
+            activeMatch.endTime = new Date();
+            await activeMatch.save();
+        }
+
+        const artistData = await fetchRandomWikipediaArtistArticle();
         
         if (!artistData || !artistData.text) {
              return res.status(500).json({ error: "Errore nel recupero dati da Wikipedia" });
@@ -131,6 +168,8 @@ router.post('/new', optionalAuthenticateToken, async (req, res) => {
 
         const newMatch = await Match.create({
             userId: userId,
+            guestId,
+            selectionMode: 'MEDIAWIKI_RANDOM_ARTIST',
             targetTitle: artistData.title,
             originalText: artistData.text,
             guessedWords: [],
@@ -159,13 +198,14 @@ router.post('/:id/guess', optionalAuthenticateToken, async (req, res) => {
         const { guess } = req.body; 
         
         const userId = req.user?.userId ?? null;
+        const guestId = userId ? null : req.headers['x-guest-id'];
 
         if (typeof guess !== 'string' || !guess.trim()) {
             return res.status(400).json({ error: "Il tentativo (guess) è obbligatorio." });
         }
 
         const match = await Match.findOne({
-            where: { id: matchId, userId: userId }
+            where: { id: matchId, userId, guestId }
         });
 
         if (!match) {
@@ -175,8 +215,8 @@ router.post('/:id/guess', optionalAuthenticateToken, async (req, res) => {
             return res.status(400).json({ error: "Questa partita è già conclusa." });
         }
 
-        const normalizedGuess = guess.trim().toLowerCase();
-        const targetTitleLower = match.targetTitle.toLowerCase();
+        const normalizedGuess = normalizeArtistName(guess);
+        const targetTitleLower = normalizeArtistName(match.targetTitle);
         
         match.attempts += 1;
 
@@ -214,6 +254,40 @@ router.post('/:id/guess', optionalAuthenticateToken, async (req, res) => {
 
     } catch (error) {
         console.error("Errore durante il tentativo:", error);
+        res.status(500).json({ error: "Errore interno del server." });
+    }
+});
+
+router.post('/:id/abandon', optionalAuthenticateToken, async (req, res) => {
+    try {
+        const userId = req.user?.userId ?? null;
+        const match = await Match.findOne({
+            where: {
+                id: req.params.id,
+                userId,
+                guestId: userId ? null : req.headers['x-guest-id']
+            }
+        });
+
+        if (!match) {
+            return res.status(404).json({ error: "Partita non trovata." });
+        }
+        if (match.status !== 'IN_PROGRESS') {
+            return res.status(400).json({ error: "Questa partita è già conclusa." });
+        }
+
+        match.status = 'ABANDONED';
+        match.endTime = new Date();
+        await match.save();
+
+        res.json({
+            status: match.status,
+            attempts: match.attempts,
+            title: match.targetTitle,
+            maskedText: maskText(match.originalText, match.guessedWords || [])
+        });
+    } catch (error) {
+        console.error("Errore durante l'abbandono della partita:", error);
         res.status(500).json({ error: "Errore interno del server." });
     }
 });

@@ -17,6 +17,23 @@ app.use('/api/auth', authRoutes);
 async function startServer() {
     try {
         await sequelize.sync({ force: false });
+
+        const matchColumns = await sequelize.getQueryInterface().describeTable('matches');
+        if (!matchColumns.guestId) {
+            await sequelize.getQueryInterface().addColumn('matches', 'guestId', {
+                type: 'VARCHAR(255)',
+                allowNull: true
+            });
+            console.log('Colonna guestId aggiunta alla tabella matches.');
+        }
+        if (!matchColumns.selectionMode) {
+            await sequelize.getQueryInterface().addColumn('matches', 'selectionMode', {
+                type: 'VARCHAR(255)',
+                allowNull: true
+            });
+            console.log('Colonna selectionMode aggiunta alla tabella matches.');
+        }
+
         console.log('Database SQLite sincronizzato con successo.');
 
         app.listen(3000, () => {

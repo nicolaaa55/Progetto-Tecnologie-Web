@@ -20,6 +20,9 @@ import { Router } from '@angular/router';
           <li class="nav-item">
             <a class="navbar-brand nav-link text-white" routerLink="/leaderboard">Classifiche</a>
           </li>
+          <li class="nav-item">
+            <a class="navbar-brand nav-link text-white" routerLink="/completed">Partite concluse</a>
+          </li>
         </ul>
         <ul class="navbar-nav align-items-center">
           <ng-container *ngIf="authService.isLoggedIn(); else guestLinks">

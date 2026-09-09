@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatchService } from '../../services/match.service';
 
@@ -13,7 +13,7 @@ export class Leaderboard implements OnInit {
   leaderboardList: any[] = [];
   errorMessage: string = '';
 
-  constructor(private matchService: MatchService) {}
+  constructor(private matchService: MatchService, private changeDetector: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.loadLeaderboard();
@@ -23,9 +23,11 @@ export class Leaderboard implements OnInit {
     this.matchService.getLeaderboard().subscribe({
       next: (data) => {
         this.leaderboardList = data;
+        this.changeDetector.detectChanges();
       },
       error: (err) => {
         this.errorMessage = 'Errore nel caricamento della classifica.';
+        this.changeDetector.detectChanges();
         console.error(err);
       }
     });

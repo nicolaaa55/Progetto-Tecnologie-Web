@@ -15,6 +15,14 @@ const Match = sequelize.define('Match', {
         type: DataTypes.TEXT,
         allowNull: false
     },
+    guestId: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    selectionMode: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     guessedWords: {
         type: DataTypes.JSON, 
         defaultValue: []

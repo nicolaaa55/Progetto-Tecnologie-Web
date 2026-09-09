@@ -3,6 +3,9 @@
     <div class="card shadow">
       <div class="card-body">
         <h2 class="text-center mb-4">🏆 Classifica Giocatori</h2>
+        <div class="text-end mb-3">
+          <button class="btn btn-outline-dark btn-sm" type="button" (click)="loadLeaderboard()">Aggiorna</button>
+        </div>
 
         <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
           {{ errorMessage }}

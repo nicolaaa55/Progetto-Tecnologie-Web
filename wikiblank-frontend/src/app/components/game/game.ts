@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs/operators';
 import { MatchService } from '../../services/match.service';
 
 @Component({
@@ -19,6 +20,7 @@ export class Game implements OnInit {
   message: string = '';
   fullText: string = '';
   isStarting = false;
+  isAbandoning = false;
 
   constructor(private matchService: MatchService, private changeDetector: ChangeDetectorRef) {}
 
@@ -68,6 +70,28 @@ export class Game implements OnInit {
       },
       error: (err) => {
         this.message = err.error.error || 'Errore durante l\'invio del tentativo.';
+      }
+    });
+  }
+
+  abandonGame() {
+    if (!this.matchId || this.isAbandoning) return;
+
+    this.isAbandoning = true;
+    this.matchService.abandonMatch(this.matchId).pipe(
+      finalize(() => {
+        this.isAbandoning = false;
+        this.changeDetector.detectChanges();
+      })
+    ).subscribe({
+      next: (response) => {
+        this.status = response.status;
+        this.attempts = response.attempts;
+        this.maskedText = response.maskedText;
+        this.message = `Partita abbandonata. Il titolo corretto era: ${response.title}.`;
+      },
+      error: (err) => {
+        this.message = err.error?.error || 'Errore durante l\'abbandono della partita.';
       }
     });
   }

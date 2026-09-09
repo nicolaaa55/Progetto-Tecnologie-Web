@@ -4,9 +4,9 @@
       <div class="card-body">
         <h2 class="text-center mb-4">🎹 Wikiblank Game</h2>
 
-        <div *ngIf="status === 'IDLE' || status === 'WON'" class="text-center mb-4">
+        <div *ngIf="status === 'IDLE' || status === 'WON' || status === 'ABANDONED'" class="text-center mb-4">
           <button class="btn btn-primary btn-lg" (click)="startNewGame()" [disabled]="isStarting">
-            {{ isStarting ? 'Caricamento...' : (status === 'WON' ? 'Gioca Ancora' : 'Inizia Nuova Partita') }}
+            {{ isStarting ? 'Caricamento...' : (status !== 'IDLE' ? 'Gioca Ancora' : 'Inizia Nuova Partita') }}
           </button>
         </div>
 
@@ -14,11 +14,12 @@
           {{ message }}
         </div>
 
-        <div *ngIf="status === 'IN_PROGRESS' || status === 'WON'">
+        <div *ngIf="status === 'IN_PROGRESS' || status === 'WON' || status === 'ABANDONED'">
           <div class="d-flex justify-content-between mb-3 text-muted">
             <span>Tentativi falliti/effettuati: <strong>{{ attempts }}</strong></span>
             <span class="badge bg-secondary" *ngIf="status === 'IN_PROGRESS'">In corso</span>
             <span class="badge bg-success" *ngIf="status === 'WON'">Vinta!</span>
+            <span class="badge bg-secondary" *ngIf="status === 'ABANDONED'">Abbandonata</span>
           </div>
 
           <div class="p-3 bg-light border rounded mb-4" style="white-space: pre-wrap; font-family: monospace; max-height: 300px; overflow-y: auto;">
@@ -29,6 +30,9 @@
             <input type="text" class="form-control" placeholder="Inserisci una parola o il nome dell'artista..." [(ngModel)]="guessWord" name="guessWord" required>
             <button class="btn btn-dark" type="submit">Prova</button>
           </form>
+          <button *ngIf="status === 'IN_PROGRESS'" class="btn btn-outline-danger" type="button" (click)="abandonGame()" [disabled]="isAbandoning">
+            {{ isAbandoning ? 'Abbandono...' : 'Abbandona partita' }}
+          </button>
         </div>
 
       </div>

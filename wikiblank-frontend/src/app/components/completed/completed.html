@@ -1,0 +1,46 @@
+<div class="row justify-content-center mt-4">
+  <div class="col-md-10">
+    <div class="card shadow">
+      <div class="card-body">
+        <h2 class="text-center mb-4">Partite concluse</h2>
+        <div class="text-end mb-3">
+          <button class="btn btn-outline-dark btn-sm" type="button" (click)="loadMatches()">Aggiorna</button>
+        </div>
+
+        <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+        <div *ngIf="!errorMessage && matches.length === 0" class="text-center text-muted py-4">
+          Nessuna partita conclusa disponibile.
+        </div>
+
+        <div class="table-responsive" *ngIf="matches.length > 0">
+          <table class="table table-striped align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th>Giocatore</th>
+                <th>Esito</th>
+                <th>Titolo corretto</th>
+                <th>Tentativi</th>
+                <th>Tempo</th>
+                <th>Testo scoperto</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let match of matches">
+                <td>{{ match.player }}</td>
+                <td>
+                  <span class="badge" [class.bg-success]="match.status === 'WON'" [class.bg-secondary]="match.status === 'ABANDONED'">
+                    {{ match.status === 'WON' ? 'Vinta' : 'Abbandonata' }}
+                  </span>
+                </td>
+                <td><strong>{{ match.title }}</strong></td>
+                <td>{{ match.attempts }}</td>
+                <td>{{ formatDuration(match.durationSeconds) }}</td>
+                <td><pre class="excerpt">{{ match.maskedText }}</pre></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
