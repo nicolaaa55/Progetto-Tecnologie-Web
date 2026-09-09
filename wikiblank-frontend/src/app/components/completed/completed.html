@@ -21,7 +21,7 @@
                 <th>Titolo corretto</th>
                 <th>Tentativi</th>
                 <th>Tempo</th>
-                <th>Testo scoperto</th>
+                <th class="d-none d-md-table-cell">Testo scoperto</th>              
               </tr>
             </thead>
             <tbody>
@@ -35,7 +35,11 @@
                 <td><strong>{{ match.title }}</strong></td>
                 <td>{{ match.attempts }}</td>
                 <td>{{ formatDuration(match.durationSeconds) }}</td>
-                <td><pre class="excerpt">{{ match.maskedText }}</pre></td>
+                <td class="d-none d-md-table-cell">
+                  <div class="scrollable-text">
+                    {{ match.maskedText }}
+                  </div>
+                </td>              
               </tr>
             </tbody>
           </table>

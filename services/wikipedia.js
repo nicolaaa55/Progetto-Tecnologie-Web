@@ -1,178 +1,104 @@
 const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
 
-const WIKIPEDIA_API_ENDPOINTS = [
-    'https://it.wikipedia.org/w/api.php',
-    'https://en.wikipedia.org/w/api.php'
-];
-const RANDOM_ARTICLE_QUERY = {
-    action: 'query',
-    list: 'random',
-    rnnamespace: 0,
-    rnfilterredir: 'nonredirects',
-    rnminsize: 500,
-    rnmaxsize: 30000,
-    rnlimit: 10,
-    format: 'json'
-};
-const RECENT_ARTICLE_TITLES = new Set();
-const ARTICLE_CACHE_FILE = path.join(__dirname, 'random-artist-cache.json');
-const WIKIBLANK_USER_AGENT = 'WikiBlankApp/1.0 (Educational Project; contact: wikiblank@example.com)';
-
-function readCachedArtist() {
-    try {
-        const cachedArtists = JSON.parse(fs.readFileSync(ARTICLE_CACHE_FILE, 'utf8'));
-        const availableArtists = cachedArtists.filter(artist =>
-            artist.title && artist.text && !RECENT_ARTICLE_TITLES.has(artist.title)
-        );
-        return availableArtists[Math.floor(Math.random() * availableArtists.length)] || null;
-    } catch {
-        return null;
-    }
-}
-
-function cacheArtist(artist) {
-    let cachedArtists = [];
-    try {
-        cachedArtists = JSON.parse(fs.readFileSync(ARTICLE_CACHE_FILE, 'utf8'));
-    } catch {
-        // La cache viene creata al primo risultato valido.
-    }
-
-    const updatedCache = [artist, ...cachedArtists.filter(item => item.title !== artist.title)].slice(0, 20);
-    fs.writeFileSync(ARTICLE_CACHE_FILE, JSON.stringify(updatedCache), 'utf8');
-}
-
-function isMusicalArtistArticle(text) {
-    const normalizedText = text.toLowerCase();
-    const introduction = normalizedText.substring(0, 700);
-    const isArtist = /cantante|musicista|compositore|compositrice|rapper|dj|gruppo musicale|band musicale/.test(introduction);
-    const isItalianOrAmerican = /italian[oa]|italian[oi]|statunitense|statunitensi|americano|americana|americani|stati uniti|usa|american|united states/.test(introduction);
-    const isMusicRelease = /\b(album|ep|singolo|brano|canzone|discografia)\b/.test(introduction);
-
-    return isArtist && isItalianOrAmerican && !isMusicRelease;
-}
-
+// Funzione di validazione richiesta dal tuo file matchRoutes.js
 function isValidRandomArtistArticleTitle(title) {
-    return typeof title === 'string'
-        && title.trim().toLowerCase() !== 'vincitori italiani del grammy award';
+    if (!title) return false;
+    // Escludiamo titoli con prefissi strani che potrebbero sfuggire
+    if (title.includes('Wikipedia:') || title.includes('Categoria:') || title.includes('Utente:')) {
+        return false;
+    }
+    return true;
+}
+
+// Funzione VITALE per ripristinare la fluidità del testo e togliere porzioni sconnesse
+function cleanWikipediaText(text) {
+    const unwantedSections = [
+        /==\s*Note\s*==[\s\S]*/i,
+        /==\s*Bibliografia\s*==[\s\S]*/i,
+        /==\s*Voci correlate\s*==[\s\S]*/i,
+        /==\s*Altri progetti\s*==[\s\S]*/i,
+        /==\s*Collegamenti esterni\s*==[\s\S]*/i,
+        /==\s*Discografia\s*==[\s\S]*/i,
+        /==\s*Filmografia\s*==[\s\S]*/i
+    ];
+
+    let cleaned = text;
+    for (const pattern of unwantedSections) {
+        cleaned = cleaned.replace(pattern, '');
+    }
+
+    // Rimuoviamo righe troppo corte, elenchi puntati o tabellari (spesso cause di "frammenti")
+    const lines = cleaned.split('\n');
+    const filteredLines = lines.filter(line => {
+        if (line.match(/^\d{4}\b/) || line.match(/^[•*-]\s/)) {
+            return false;
+        }
+        return true;
+    });
+
+    return filteredLines.join('\n').trim();
 }
 
 async function fetchRandomWikipediaArtistArticle() {
-    for (let attempt = 0; attempt < 8; attempt++) {
-        try {
-            const randomResult = await fetchRandomWikipediaArticles();
-
-            const pageContents = await fetchPageContents(
-                randomResult.pages.map(page => page.title),
-                randomResult.apiEndpoint
-            );
-            const validArtists = pageContents.filter(pageContent =>
-                isMusicalArtistArticle(pageContent.text)
-                && !RECENT_ARTICLE_TITLES.has(pageContent.title)
-            );
-
-            if (validArtists.length > 0) {
-                const selectedArtist = validArtists[Math.floor(Math.random() * validArtists.length)];
-                RECENT_ARTICLE_TITLES.add(selectedArtist.title);
-                if (RECENT_ARTICLE_TITLES.size > 20) {
-                    RECENT_ARTICLE_TITLES.delete(RECENT_ARTICLE_TITLES.values().next().value);
-                }
-                cacheArtist(selectedArtist);
-                return selectedArtist;
-            }
-        } catch (error) {
-            console.error('Tentativo di selezione casuale fallito:', error.message);
-            if (error.response?.status === 429) {
-                await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-            }
-        }
-    }
-
-    const cachedArtist = readCachedArtist();
-    if (cachedArtist) {
-        RECENT_ARTICLE_TITLES.add(cachedArtist.title);
-        return cachedArtist;
-    }
-
-    const storedArtist = await readStoredArtistArticle();
-    if (storedArtist) {
-        RECENT_ARTICLE_TITLES.add(storedArtist.title);
-        cacheArtist(storedArtist);
-        return storedArtist;
-    }
-
-    throw new Error('Impossibile recuperare un artista musicale casuale da Wikipedia.');
-}
-
-async function readStoredArtistArticle() {
     try {
-        const { Match } = require('../models');
-        const storedMatches = await Match.findAll({
-            attributes: ['targetTitle', 'originalText'],
-            where: { originalText: { [require('sequelize').Op.ne]: null } },
-            order: [['startTime', 'DESC']],
-            limit: 100
+        // =========================================================
+        // STEP 1: IMPLEMENTAZIONE SPECIFICA DELLA TRACCIA (Professore)
+        // Usiamo action=query, list=random, rnnamespace=0, rnfilterredir=nonredirects
+        // Aggiungiamo anche rnminsize per evitare le pagine stub (troppo brevi)
+        // =========================================================
+        const randomUrl = `https://it.wikipedia.org/w/api.php?action=query&list=random&rnnamespace=0&rnfilterredir=nonredirects&rnminsize=1500&rnlimit=1&format=json`;
+        
+        const randomRes = await axios.get(randomUrl, {
+            headers: { 'User-Agent': 'WikiBlankApp/1.0' }
         });
 
-        const validStoredArtists = storedMatches
-            .map(match => ({ title: match.targetTitle, text: match.originalText }))
-            .filter(artist =>
-                isValidRandomArtistArticleTitle(artist.title)
-                && isMusicalArtistArticle(artist.text)
-                && !RECENT_ARTICLE_TITLES.has(artist.title)
-            );
+        const randomData = randomRes.data.query?.random;
+        if (!randomData || randomData.length === 0) {
+            throw new Error("Nessuna pagina trovata dalla query random.");
+        }
 
-        return validStoredArtists[Math.floor(Math.random() * validStoredArtists.length)] || null;
+        const randomTitle = randomData[0].title;
+
+        // =========================================================
+        // STEP 2: RECUPERO DEL TESTO CORPOSO (Per la giocabilità)
+        // Usiamo il titolo random per recuperare il testo pulito (explaintext)
+        // =========================================================
+        const extractUrl = `https://it.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&titles=${encodeURIComponent(randomTitle)}&format=json`;
+        
+        const extractRes = await axios.get(extractUrl, {
+            headers: { 'User-Agent': 'WikiBlankApp/1.0' }
+        });
+
+        const pages = extractRes.data.query.pages;
+        const pageId = Object.keys(pages)[0];
+        
+        let fullText = pages[pageId].extract;
+
+        // Se la pagina pescata fosse comunque strana o vuota, peschiamo di nuovo in automatico
+        if (!fullText || fullText.length < 500) {
+            return fetchRandomWikipediaArtistArticle();
+        }
+
+        // Applichiamo la pulizia per togliere note ed elenchi
+        fullText = cleanWikipediaText(fullText);
+
+        // Assicuriamoci che ci sia sempre abbastanza testo, tagliandolo se troppo lungo
+        if (fullText.length > 2000) {
+            fullText = fullText.substring(0, 2000) + '...';
+        }
+
+        return {
+            title: randomTitle,
+            text: fullText
+        };
+
     } catch (error) {
-        console.error('Fallback database non disponibile:', error.message);
-        return null;
+        console.error("Errore nel recupero da Wikipedia:", error.message);
+        throw error;
     }
-}
-
-async function fetchRandomWikipediaArticles() {
-    const apiEndpoint = WIKIPEDIA_API_ENDPOINTS[Math.floor(Math.random() * WIKIPEDIA_API_ENDPOINTS.length)];
-    const query = new URLSearchParams(RANDOM_ARTICLE_QUERY);
-    const response = await axios.get(`${apiEndpoint}?${query}`, {
-        headers: { 'User-Agent': WIKIBLANK_USER_AGENT },
-        timeout: 8000
-    });
-
-    return {
-        apiEndpoint,
-        pages: response.data.query?.random || []
-    };
-}
-
-async function fetchPageContents(titles, apiEndpoint) {
-    const query = new URLSearchParams({
-        action: 'query',
-        prop: 'extracts',
-        explaintext: '1',
-        titles: titles.join('|'),
-        format: 'json'
-    });
-
-    const response = await axios.get(`${apiEndpoint}?${query}`, {
-        headers: { 'User-Agent': WIKIBLANK_USER_AGENT },
-        timeout: 8000
-    });
-
-    return Object.values(response.data.query.pages)
-        .filter(page => page.pageid !== -1 && page.extract)
-        .map(page => ({
-            title: page.title,
-            text: page.extract.length > 2000
-                ? `${page.extract.substring(0, 2000)}...`
-                : page.extract
-        }));
 }
 
 module.exports = {
     fetchRandomWikipediaArtistArticle,
-    isValidRandomArtistArticleTitle,
-    fetchRandomWikipediaArticles,
-    fetchPageContents,
-    isMusicalArtistArticle
+    isValidRandomArtistArticleTitle
 };
