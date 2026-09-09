@@ -1,0 +1,46 @@
+<div class="row justify-content-center mt-4">
+  <div class="col-md-8">
+    <div class="card shadow">
+      <div class="card-body">
+        <h2 class="text-center mb-4">🏆 Classifica Giocatori</h2>
+
+        <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+          {{ errorMessage }}
+        </div>
+
+        <div class="table-responsive" *ngIf="leaderboardList.length > 0; else noData">
+          <table class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Giocatore</th>
+                <th scope="col" class="text-center">Partite Vinte</th>
+                <th scope="col" class="text-center">Tempo Medio (sec)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let player of leaderboardList; let i = index">
+                <th scope="row">
+                  <span *ngIf="i === 0">🥇</span>
+                  <span *ngIf="i === 1">🥈</span>
+                  <span *ngIf="i === 2">🥉</span>
+                  <span *ngIf="i > 0">{{ i + 1 }}</span>
+                </th>
+                <td><strong>{{ player.username }}</strong></td>
+                <td class="text-center"><span class="badge bg-success">{{ player.wonMatchesCount }}</span></td>
+                <td class="text-center">{{ player.averageTimeSeconds }}s</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <ng-template #noData>
+          <div class="text-center text-muted py-4">
+            <p>Nessuna partita vinta registrata al momento. Gioca e conquista il primo posto!</p>
+          </div>
+        </ng-template>
+
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,37 @@
+<div class="row justify-content-center mt-4">
+  <div class="col-md-8">
+    <div class="card shadow">
+      <div class="card-body">
+        <h2 class="text-center mb-4">🎹 Wikiblank Game</h2>
+
+        <div *ngIf="status === 'IDLE' || status === 'WON'" class="text-center mb-4">
+          <button class="btn btn-primary btn-lg" (click)="startNewGame()">
+            {{ status === 'WON' ? 'Gioca Ancora' : 'Inizia Nuova Partita' }}
+          </button>
+        </div>
+
+        <div *ngIf="message" class="alert alert-info text-center" role="alert">
+          {{ message }}
+        </div>
+
+        <div *ngIf="status === 'IN_PROGRESS' || status === 'WON'">
+          <div class="d-flex justify-content-between mb-3 text-muted">
+            <span>Tentativi falliti/effettuati: <strong>{{ attempts }}</strong></span>
+            <span class="badge bg-secondary" *ngIf="status === 'IN_PROGRESS'">In corso</span>
+            <span class="badge bg-success" *ngIf="status === 'WON'">Vinta!</span>
+          </div>
+
+          <div class="p-3 bg-light border rounded mb-4" style="white-space: pre-wrap; font-family: monospace; max-height: 300px; overflow-y: auto;">
+            {{ maskedText }}
+          </div>
+
+          <form *ngIf="status === 'IN_PROGRESS'" (ngSubmit)="makeGuess()" class="input-group mb-3">
+            <input type="text" class="form-control" placeholder="Inserisci una parola o il nome dell'artista..." [(ngModel)]="guessWord" name="guessWord" required>
+            <button class="btn btn-dark" type="submit">Prova</button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
