@@ -1,111 +1,11 @@
 const express = require('express');
 const router = express.Router();
+
 const { Match, User } = require('../models');
-const { Match } = require('../models');
 const { fetchRandomArtist } = require('../services/wikipedia');
 const { maskText } = require('../controllers/matchController');
+const authenticateToken = require('../middlewares/authMiddleware');
 
-router.post('/new', async (req, res) => {
-    try {
-        const { userId } = req.body;
-
-        if (!userId) {
-            return res.status(400).json({ error: "L'ID utente è obbligatorio." });
-        }
-
-        const artistData = await fetchRandomArtist();
-        
-        if (!artistData || !artistData.text) {
-             return res.status(500).json({ error: "Errore nel recupero dati da Wikipedia" });
-        }
-
-        const newMatch = await Match.create({
-            userId: userId,
-            targetTitle: artistData.title,
-            originalText: artistData.text,
-            guessedWords: [],
-            attempts: 0,
-            status: 'IN_PROGRESS'
-        });
-
-        const maskedContent = maskText(artistData.text, []);
-
-        res.status(201).json({
-            message: "Nuova partita creata con successo!",
-            matchId: newMatch.id,
-            maskedText: maskedContent
-        });
-
-    } catch (error) {
-        console.error("Errore durante la creazione della partita:", error);
-        res.status(500).json({ error: "Errore interno del server." });
-    }
-});
-
-module.exports = router;
-
-router.post('/:id/guess', async (req, res) => {
-    try {
-        const matchId = req.params.id;
-        const { userId, guess } = req.body;
-
-        if (!userId || !guess) {
-            return res.status(400).json({ error: "ID utente e tentativo (guess) sono obbligatori." });
-        }
-
-        const match = await Match.findOne({
-            where: { id: matchId, userId: userId }
-        });
-
-        if (!match) {
-            return res.status(404).json({ error: "Partita non trovata." });
-        }
-        if (match.status !== 'IN_PROGRESS') {
-            return res.status(400).json({ error: "Questa partita è già conclusa." });
-        }
-
-        const normalizedGuess = guess.trim().toLowerCase();
-        const targetTitleLower = match.targetTitle.toLowerCase();
-        
-        match.attempts += 1;
-
-        if (normalizedGuess === targetTitleLower) {
-            match.status = 'WON';
-            match.endTime = new Date();
-            
-            await match.save();
-            
-            return res.json({
-                status: 'WON',
-                message: "Hai vinto! Hai indovinato l'artista.",
-                attempts: match.attempts,
-                fullText: match.originalText
-            });
-        }
-
-        let currentGuesses = match.guessedWords;
-        
-        if (!currentGuesses.includes(normalizedGuess)) {
-            currentGuesses.push(normalizedGuess);
-            match.guessedWords = currentGuesses; 
-            match.changed('guessedWords', true);
-        }
-
-        const updatedMaskedText = maskText(match.originalText, match.guessedWords);
-
-        await match.save();
-
-        res.json({
-            status: 'IN_PROGRESS',
-            attempts: match.attempts,
-            maskedText: updatedMaskedText
-        });
-
-    } catch (error) {
-        console.error("Errore durante il tentativo:", error);
-        res.status(500).json({ error: "Errore interno del server." });
-    }
-});
 
 router.get('/leaderboard', async (req, res) => {
     try {
@@ -163,6 +63,7 @@ router.get('/leaderboard', async (req, res) => {
     }
 });
 
+
 router.get('/completed', async (req, res) => {
     try {
         const completedMatches = await Match.findAll({
@@ -200,3 +101,105 @@ router.get('/completed', async (req, res) => {
         res.status(500).json({ error: "Errore nel caricamento delle partite concluse." });
     }
 });
+
+
+router.post('/new', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        const artistData = await fetchRandomArtist();
+        
+        if (!artistData || !artistData.text) {
+             return res.status(500).json({ error: "Errore nel recupero dati da Wikipedia" });
+        }
+
+        const newMatch = await Match.create({
+            userId: userId,
+            targetTitle: artistData.title,
+            originalText: artistData.text,
+            guessedWords: [],
+            attempts: 0,
+            status: 'IN_PROGRESS'
+        });
+
+        const maskedContent = maskText(artistData.text, []);
+
+        res.status(201).json({
+            message: "Nuova partita creata con successo!",
+            matchId: newMatch.id,
+            maskedText: maskedContent
+        });
+
+    } catch (error) {
+        console.error("Errore durante la creazione della partita:", error);
+        res.status(500).json({ error: "Errore interno del server." });
+    }
+});
+
+
+router.post('/:id/guess', authenticateToken, async (req, res) => {
+    try {
+        const matchId = req.params.id;
+        const { guess } = req.body; 
+        
+        const userId = req.user.userId;
+
+        if (!guess) {
+            return res.status(400).json({ error: "Il tentativo (guess) è obbligatorio." });
+        }
+
+        const match = await Match.findOne({
+            where: { id: matchId, userId: userId }
+        });
+
+        if (!match) {
+            return res.status(404).json({ error: "Partita non trovata." });
+        }
+        if (match.status !== 'IN_PROGRESS') {
+            return res.status(400).json({ error: "Questa partita è già conclusa." });
+        }
+
+        const normalizedGuess = guess.trim().toLowerCase();
+        const targetTitleLower = match.targetTitle.toLowerCase();
+        
+        match.attempts += 1;
+
+        if (normalizedGuess === targetTitleLower) {
+            match.status = 'WON';
+            match.endTime = new Date();
+            
+            await match.save();
+            
+            return res.json({
+                status: 'WON',
+                message: "Hai vinto! Hai indovinato l'artista.",
+                attempts: match.attempts,
+                fullText: match.originalText 
+            });
+        }
+
+        let currentGuesses = match.guessedWords;
+        
+        if (!currentGuesses.includes(normalizedGuess)) {
+            currentGuesses.push(normalizedGuess);
+            match.guessedWords = currentGuesses; 
+            match.changed('guessedWords', true);
+        }
+
+        const updatedMaskedText = maskText(match.originalText, match.guessedWords);
+
+        await match.save();
+
+        res.json({
+            status: 'IN_PROGRESS',
+            attempts: match.attempts,
+            maskedText: updatedMaskedText
+        });
+
+    } catch (error) {
+        console.error("Errore durante il tentativo:", error);
+        res.status(500).json({ error: "Errore interno del server." });
+    }
+});
+
+module.exports = router;
