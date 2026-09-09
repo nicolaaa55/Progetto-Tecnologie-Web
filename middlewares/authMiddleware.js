@@ -19,4 +19,22 @@ function authenticateToken(req, res, next) {
     }
 }
 
+function optionalAuthenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return next();
+    }
+
+    try {
+        req.user = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+        // The game remains public; an invalid optional token is treated as anonymous.
+    }
+
+    next();
+}
+
 module.exports = authenticateToken;
+module.exports.optionalAuthenticateToken = optionalAuthenticateToken;

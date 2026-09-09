@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { Leaderboard } from './leaderboard';
 
 describe('Leaderboard', () => {
@@ -8,6 +9,7 @@ describe('Leaderboard', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Leaderboard],
+      providers: [provideHttpClient()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Leaderboard);

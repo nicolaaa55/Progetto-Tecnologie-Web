@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatchService } from '../../services/match.service';
@@ -18,27 +18,35 @@ export class Game implements OnInit {
   status: string = 'IDLE';
   message: string = '';
   fullText: string = '';
+  isStarting = false;
 
-  constructor(private matchService: MatchService) {}
+  constructor(private matchService: MatchService, private changeDetector: ChangeDetectorRef) {}
 
   ngOnInit() {
   }
 
-  startNewGame() {
-    this.matchService.startNewMatch().subscribe({
-      next: (response) => {
-        this.matchId = response.matchId;
-        this.maskedText = response.maskedText;
-        this.attempts = 0;
-        this.status = 'IN_PROGRESS';
-        this.message = 'Partita avviata! Indovina il titolo o l\'artista nascosto.';
-        this.guessWord = '';
-        this.fullText = '';
-      },
-      error: (err) => {
-        this.message = err.error.error || 'Errore nella creazione della partita.';
-      }
-    });
+  async startNewGame() {
+    if (this.isStarting || this.status === 'IN_PROGRESS') return;
+
+    this.isStarting = true;
+    this.message = '';
+
+    try {
+      const response = await this.matchService.startNewMatch();
+      this.matchId = response.matchId;
+      this.maskedText = response.maskedText;
+      this.attempts = 0;
+      this.status = 'IN_PROGRESS';
+      this.message = 'Partita avviata! Indovina il titolo o l\'artista nascosto.';
+      this.guessWord = '';
+      this.fullText = '';
+    } catch (err: any) {
+      this.status = 'IDLE';
+      this.message = err?.error?.error || 'Errore nella creazione della partita.';
+    } finally {
+      this.isStarting = false;
+      this.changeDetector.detectChanges();
+    }
   }
 
   makeGuess() {

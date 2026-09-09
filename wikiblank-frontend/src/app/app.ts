@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { RouterOutlet, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AuthService } from './services/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-root',
@@ -19,13 +21,23 @@ import { CommonModule } from '@angular/common';
             <a class="navbar-brand nav-link text-white" routerLink="/leaderboard">Classifiche</a>
           </li>
         </ul>
-        <ul class="navbar-nav">
-          <li class="nav-item">
-            <a class="navbar-brand nav-link text-white" routerLink="/login">Login</a>
-          </li>
-          <li class="nav-item">
-            <a class="navbar-brand nav-link text-white" routerLink="/register">Registrati</a>
-          </li>
+        <ul class="navbar-nav align-items-center">
+          <ng-container *ngIf="authService.isLoggedIn(); else guestLinks">
+            <li class="nav-item">
+              <span class="navbar-text text-white me-3">Benvenuto, {{ authService.getUsername() }}!</span>
+            </li>
+            <li class="nav-item">
+              <button class="btn btn-outline-light btn-sm" type="button" (click)="logout()">Esci</button>
+            </li>
+          </ng-container>
+          <ng-template #guestLinks>
+            <li class="nav-item">
+              <a class="navbar-brand nav-link text-white" routerLink="/login">Login</a>
+            </li>
+            <li class="nav-item">
+              <a class="navbar-brand nav-link text-white" routerLink="/register">Registrati</a>
+            </li>
+          </ng-template>
         </ul>
       </div>
     </nav>
@@ -37,4 +49,11 @@ import { CommonModule } from '@angular/common';
   `,
   styleUrls: []
 })
-export class App {}
+export class App {
+  constructor(public authService: AuthService, private router: Router) {}
+
+  logout() {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
+}

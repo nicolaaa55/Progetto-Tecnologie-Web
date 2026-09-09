@@ -14,7 +14,8 @@ async function fetchRandomArtist() {
 
         try {
             const response = await axios.get(url, {
-                headers: { 'User-Agent': 'WikiBlankApp/1.0 (Educational Project)' }
+                headers: { 'User-Agent': 'WikiBlankApp/1.0 (Educational Project)' },
+                timeout: 8000
             });
 
             const members = response.data.query?.categorymembers;
@@ -37,7 +38,8 @@ async function fetchPageContent(title) {
     const url = `https://it.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&titles=${encodeURIComponent(title)}&format=json`;
 
     const response = await axios.get(url, {
-        headers: { 'User-Agent': 'WikiBlankApp/1.0 (Educational Project)' }
+        headers: { 'User-Agent': 'WikiBlankApp/1.0 (Educational Project)' },
+        timeout: 8000
     });
 
     const pages = response.data.query.pages;

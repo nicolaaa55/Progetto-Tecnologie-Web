@@ -5,8 +5,8 @@
         <h2 class="text-center mb-4">🎹 Wikiblank Game</h2>
 
         <div *ngIf="status === 'IDLE' || status === 'WON'" class="text-center mb-4">
-          <button class="btn btn-primary btn-lg" (click)="startNewGame()">
-            {{ status === 'WON' ? 'Gioca Ancora' : 'Inizia Nuova Partita' }}
+          <button class="btn btn-primary btn-lg" (click)="startNewGame()" [disabled]="isStarting">
+            {{ isStarting ? 'Caricamento...' : (status === 'WON' ? 'Gioca Ancora' : 'Inizia Nuova Partita') }}
           </button>
         </div>
 

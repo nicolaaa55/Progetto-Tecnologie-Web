@@ -15,12 +15,13 @@ if (!JWT_SECRET) {
 router.post('/register', async (req, res) => {
     try {
         const { username, password } = req.body;
+        const normalizedUsername = typeof username === 'string' ? username.trim() : '';
 
-        if (!username || !password) {
+        if (!normalizedUsername || typeof password !== 'string' || !password) {
             return res.status(400).json({ error: "Username e password sono obbligatori." });
         }
 
-        const existingUser = await User.findOne({ where: { username } });
+        const existingUser = await User.findOne({ where: { username: normalizedUsername } });
         if (existingUser) {
             return res.status(400).json({ error: "Username già in uso." });
         }
@@ -29,7 +30,7 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const newUser = await User.create({
-            username: username,
+            username: normalizedUsername,
             password: hashedPassword
         });
 
@@ -47,12 +48,13 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
+        const normalizedUsername = typeof username === 'string' ? username.trim() : '';
 
-        if (!username || !password) {
+        if (!normalizedUsername || typeof password !== 'string' || !password) {
             return res.status(400).json({ error: "Username e password sono obbligatori." });
         }
 
-        const user = await User.findOne({ where: { username } });
+        const user = await User.findOne({ where: { username: normalizedUsername } });
         if (!user) {
             return res.status(401).json({ error: "Credenziali non valide." });
         }

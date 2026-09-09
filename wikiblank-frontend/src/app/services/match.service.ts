@@ -13,9 +13,9 @@ export class MatchService {
 
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
-    return new HttpHeaders({
-      'Authorization': `Bearer ${token}`
-    });
+    return token
+      ? new HttpHeaders({ 'Authorization': `Bearer ${token}` })
+      : new HttpHeaders();
   }
 
   getLeaderboard(): Observable<any> {
@@ -26,8 +26,26 @@ export class MatchService {
     return this.http.get(`${this.baseUrl}/completed`);
   }
 
-  startNewMatch(): Observable<any> {
-    return this.http.post(`${this.baseUrl}/new`, {}, { headers: this.getHeaders() });
+  async startNewMatch(): Promise<any> {
+    const token = this.authService.getToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${this.baseUrl}/new`, {
+      method: 'POST',
+      headers,
+      body: '{}'
+    });
+    const body = await response.json();
+
+    if (!response.ok) {
+      throw { error: body };
+    }
+
+    return body;
   }
 
   makeGuess(matchId: number, guessWord: string): Observable<any> {

@@ -4,7 +4,7 @@ const router = express.Router();
 const { Match, User } = require('../models');
 const { fetchRandomArtist } = require('../services/wikipedia');
 const { maskText } = require('../controllers/matchController');
-const authenticateToken = require('../middlewares/authMiddleware');
+const { optionalAuthenticateToken } = require('../middlewares/authMiddleware');
 
 
 router.get('/leaderboard', async (req, res) => {
@@ -21,6 +21,10 @@ router.get('/leaderboard', async (req, res) => {
         const statsByUser = {};
 
         wonMatches.forEach(match => {
+            if (!match.userId) {
+                return;
+            }
+
             const userId = match.userId;
             const username = match.player ? match.player.username : `Utente #${userId}`;
 
@@ -87,7 +91,6 @@ router.get('/completed', async (req, res) => {
             return {
                 id: m.id,
                 player: m.player ? m.player.username : 'Anonimo',
-                targetTitle: m.targetTitle,
                 attempts: m.attempts,
                 status: m.status,
                 durationSeconds: durationInSeconds,
@@ -103,9 +106,22 @@ router.get('/completed', async (req, res) => {
 });
 
 
-router.post('/new', authenticateToken, async (req, res) => {
+router.post('/new', optionalAuthenticateToken, async (req, res) => {
     try {
-        const userId = req.user.userId;
+        const userId = req.user?.userId ?? null;
+
+        const activeMatch = await Match.findOne({
+            where: { userId, status: 'IN_PROGRESS' },
+            order: [['startTime', 'DESC']]
+        });
+
+        if (activeMatch) {
+            return res.json({
+                message: "Partita in corso recuperata.",
+                matchId: activeMatch.id,
+                maskedText: maskText(activeMatch.originalText, activeMatch.guessedWords || [])
+            });
+        }
 
         const artistData = await fetchRandomArtist();
         
@@ -137,14 +153,14 @@ router.post('/new', authenticateToken, async (req, res) => {
 });
 
 
-router.post('/:id/guess', authenticateToken, async (req, res) => {
+router.post('/:id/guess', optionalAuthenticateToken, async (req, res) => {
     try {
         const matchId = req.params.id;
         const { guess } = req.body; 
         
-        const userId = req.user.userId;
+        const userId = req.user?.userId ?? null;
 
-        if (!guess) {
+        if (typeof guess !== 'string' || !guess.trim()) {
             return res.status(400).json({ error: "Il tentativo (guess) è obbligatorio." });
         }
 

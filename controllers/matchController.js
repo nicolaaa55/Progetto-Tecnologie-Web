@@ -13,7 +13,7 @@ const STOP_WORDS = new Set([
 function maskText(originalText, guessedWords = []) {
     const normalizedGuesses = guessedWords.map(w => w.toLowerCase());
 
-    const wordRegex = /[a-zA-ZàèéìòùÀÈÉÌÒÙ]+/g;
+    const wordRegex = /[a-zA-ZàèéìòùÀÈÉÌÒÙ0-9]+/g;
 
     return originalText.replace(wordRegex, (match) => {
         const lowerMatch = match.toLowerCase();
