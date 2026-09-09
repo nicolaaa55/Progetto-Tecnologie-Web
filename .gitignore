@@ -1,0 +1,5 @@
+node_modules/
+.env
+wikiblank.sqlite
+*.log
+.DS_Store
