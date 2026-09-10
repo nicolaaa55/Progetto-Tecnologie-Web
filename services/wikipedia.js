@@ -1,96 +1,68 @@
 const axios = require('axios');
 
-// Funzione di validazione richiesta dal tuo file matchRoutes.js
-function isValidRandomArtistArticleTitle(title) {
-    if (!title) return false;
-    // Escludiamo titoli con prefissi strani che potrebbero sfuggire
-    if (title.includes('Wikipedia:') || title.includes('Categoria:') || title.includes('Utente:')) {
-        return false;
-    }
-    return true;
-}
+const artistCategories = [
+    'Categoria:Cantautori_italiani',
+    'Categoria:Cantanti_statunitensi',
+    'Categoria:Gruppi_musicali_italiani',
+    'Categoria:Gruppi_musicali_statunitensi',
+    'Categoria:Rapper_italiani',
+    'Categoria:Rapper_statunitensi'
+];
 
-// Funzione VITALE per ripristinare la fluidità del testo e togliere porzioni sconnesse
 function cleanWikipediaText(text) {
-    const unwantedSections = [
-        /==\s*Note\s*==[\s\S]*/i,
-        /==\s*Bibliografia\s*==[\s\S]*/i,
-        /==\s*Voci correlate\s*==[\s\S]*/i,
-        /==\s*Altri progetti\s*==[\s\S]*/i,
-        /==\s*Collegamenti esterni\s*==[\s\S]*/i,
-        /==\s*Discografia\s*==[\s\S]*/i,
-        /==\s*Filmografia\s*==[\s\S]*/i
-    ];
-
     let cleaned = text;
+    const unwantedSections = [
+        /==\s*Note\s*==[\s\S]*/i, /==\s*Bibliografia\s*==[\s\S]*/i, /==\s*Voci correlate\s*==[\s\S]*/i,
+        /==\s*Altri progetti\s*==[\s\S]*/i, /==\s*Collegamenti esterni\s*==[\s\S]*/i, 
+        /==\s*Discografia\s*==[\s\S]*/i, /==\s*Filmografia\s*==[\s\S]*/i
+    ];
     for (const pattern of unwantedSections) {
         cleaned = cleaned.replace(pattern, '');
     }
 
-    // Rimuoviamo righe troppo corte, elenchi puntati o tabellari (spesso cause di "frammenti")
     const lines = cleaned.split('\n');
-    const filteredLines = lines.filter(line => {
-        if (line.match(/^\d{4}\b/) || line.match(/^[•*-]\s/)) {
-            return false;
-        }
-        return true;
-    });
-
-    return filteredLines.join('\n').trim();
+    return lines.filter(line => !line.match(/^\d{4}\b/) && !line.match(/^[•*-]\s/)).join('\n').trim();
 }
+
+const axiosConfig = { headers: { 'User-Agent': 'WikiBlankApp/1.0 (StudentProject)' } };
 
 async function fetchRandomWikipediaArtistArticle() {
     try {
-        // =========================================================
-        // STEP 1: IMPLEMENTAZIONE SPECIFICA DELLA TRACCIA (Professore)
-        // Usiamo action=query, list=random, rnnamespace=0, rnfilterredir=nonredirects
-        // Aggiungiamo anche rnminsize per evitare le pagine stub (troppo brevi)
-        // =========================================================
-        const randomUrl = `https://it.wikipedia.org/w/api.php?action=query&list=random&rnnamespace=0&rnfilterredir=nonredirects&rnminsize=1500&rnlimit=1&format=json`;
+        const randomCategory = artistCategories[Math.floor(Math.random() * artistCategories.length)];
         
-        const randomRes = await axios.get(randomUrl, {
-            headers: { 'User-Agent': 'WikiBlankApp/1.0' }
-        });
+        const listUrl = `https://it.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=${encodeURIComponent(randomCategory)}&cmlimit=500&cmnamespace=0&format=json`;
+        const listRes = await axios.get(listUrl, axiosConfig);
+        
+        const members = listRes.data.query?.categorymembers;
+        if (!members || members.length === 0) return fetchRandomWikipediaArtistArticle();
 
-        const randomData = randomRes.data.query?.random;
-        if (!randomData || randomData.length === 0) {
-            throw new Error("Nessuna pagina trovata dalla query random.");
+        const randomArtist = members[Math.floor(Math.random() * members.length)];
+        const title = randomArtist.title;
+
+        if (title.length > 30 || title.includes('(')) {
+            return fetchRandomWikipediaArtistArticle(); 
         }
 
-        const randomTitle = randomData[0].title;
-
-        // =========================================================
-        // STEP 2: RECUPERO DEL TESTO CORPOSO (Per la giocabilità)
-        // Usiamo il titolo random per recuperare il testo pulito (explaintext)
-        // =========================================================
-        const extractUrl = `https://it.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&titles=${encodeURIComponent(randomTitle)}&format=json`;
-        
-        const extractRes = await axios.get(extractUrl, {
-            headers: { 'User-Agent': 'WikiBlankApp/1.0' }
-        });
-
+        const extractUrl = `https://it.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&titles=${encodeURIComponent(title)}&format=json`;
+        const extractRes = await axios.get(extractUrl, axiosConfig);
         const pages = extractRes.data.query.pages;
         const pageId = Object.keys(pages)[0];
         
         let fullText = pages[pageId].extract;
 
-        // Se la pagina pescata fosse comunque strana o vuota, peschiamo di nuovo in automatico
-        if (!fullText || fullText.length < 500) {
+        if (!fullText || fullText.length < 800) {
             return fetchRandomWikipediaArtistArticle();
         }
 
-        // Applichiamo la pulizia per togliere note ed elenchi
         fullText = cleanWikipediaText(fullText);
 
-        // Assicuriamoci che ci sia sempre abbastanza testo, tagliandolo se troppo lungo
-        if (fullText.length > 2000) {
-            fullText = fullText.substring(0, 2000) + '...';
+        const MAX_LENGTH = 1500;
+        if (fullText.length > MAX_LENGTH) {
+            let truncated = fullText.substring(0, MAX_LENGTH);
+            fullText = truncated.substring(0, truncated.lastIndexOf(' ')) + '...';
         }
 
-        return {
-            title: randomTitle,
-            text: fullText
-        };
+        return { title: title, text: fullText };
 
     } catch (error) {
         console.error("Errore nel recupero da Wikipedia:", error.message);
@@ -99,6 +71,5 @@ async function fetchRandomWikipediaArtistArticle() {
 }
 
 module.exports = {
-    fetchRandomWikipediaArtistArticle,
-    isValidRandomArtistArticleTitle
+    fetchRandomWikipediaArtistArticle
 };

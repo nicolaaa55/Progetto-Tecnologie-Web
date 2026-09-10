@@ -9,7 +9,6 @@ import { Router } from '@angular/router';
   standalone: true,
   imports: [CommonModule, RouterOutlet, RouterLink],
   template: `
-    <!-- Barra di Navigazione -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 px-3">
       <a class="navbar-brand" routerLink="/game">🎹 WIKIBLANK</a>
       <div class="collapse navbar-collapse show">
@@ -45,12 +44,10 @@ import { Router } from '@angular/router';
       </div>
     </nav>
 
-    <!-- Area dinamica per le pagine -->
     <div class="container">
       <router-outlet></router-outlet>
     </div>
-  `,
-  styleUrls: []
+  `
 })
 export class App {
   constructor(public authService: AuthService, private router: Router) {}

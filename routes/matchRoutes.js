@@ -4,8 +4,7 @@ const { Op } = require('sequelize');
 
 const { Match, User } = require('../models');
 const {
-    fetchRandomWikipediaArtistArticle,
-    isValidRandomArtistArticleTitle
+    fetchRandomWikipediaArtistArticle
 } = require('../services/wikipedia');
 const { maskText } = require('../controllers/matchController');
 const { optionalAuthenticateToken } = require('../middlewares/authMiddleware');
@@ -105,7 +104,6 @@ router.get('/completed', optionalAuthenticateToken, async (req, res) => {
         });
 
         const formattedMatches = completedMatches
-            .filter(m => isValidRandomArtistArticleTitle(m.targetTitle))
             .slice(0, 50)
             .map(m => {
             const durationInSeconds = m.endTime && m.startTime
@@ -144,9 +142,7 @@ router.post('/new', optionalAuthenticateToken, async (req, res) => {
             })
             : null;
 
-        if (activeMatch
-            && activeMatch.selectionMode === 'MEDIAWIKI_RANDOM_ARTIST'
-            && isValidRandomArtistArticleTitle(activeMatch.targetTitle)) {
+        if (activeMatch && activeMatch.selectionMode === 'MEDIAWIKI_RANDOM_ARTIST') {
             return res.json({
                 message: "Partita in corso recuperata.",
                 matchId: activeMatch.id,

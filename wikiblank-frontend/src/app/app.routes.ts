@@ -9,8 +9,8 @@ export const routes: Routes = [
   { path: '', redirectTo: 'game', pathMatch: 'full' },
   { path: 'login', component: Login },
   { path: 'register', component: Register },
-  { path: 'game', component: Game }, 
+  { path: 'game', component: Game },
   { path: 'leaderboard', component: Leaderboard },
   { path: 'completed', component: Completed },
-  { path: '**', redirectTo: 'game' } // Reindirizziamo a game anche in caso di errore!
+  { path: '**', redirectTo: 'game' }
 ];

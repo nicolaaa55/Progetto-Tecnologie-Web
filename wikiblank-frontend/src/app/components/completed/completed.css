@@ -7,9 +7,9 @@
   font: inherit;
 }
 .scrollable-text {
-  max-height: 100px; /* Limita l'altezza massima della cella */
-  overflow-y: auto;  /* Fa comparire la barretta di scorrevolezza verticale se il testo è lungo */
-  white-space: pre-wrap; /* Mantiene formattazione e spazi originali */
+  max-height: 100px;
+  overflow-y: auto;
+  white-space: pre-wrap;
   word-break: break-word;
-  padding-right: 5px;    /* Evita che il testo si attacchi alla scrollbar */
+  padding-right: 5px;
 }
