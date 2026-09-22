@@ -25,10 +25,9 @@ export class Leaderboard implements OnInit {
         this.leaderboardList = data;
         this.changeDetector.detectChanges();
       },
-      error: (err) => {
+      error: () => {
         this.errorMessage = 'Errore nel caricamento della classifica.';
         this.changeDetector.detectChanges();
-        console.error(err);
       }
     });
   }

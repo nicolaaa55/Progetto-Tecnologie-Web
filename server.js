@@ -24,21 +24,15 @@ async function startServer() {
                 type: 'VARCHAR(255)',
                 allowNull: true
             });
-            console.log('Colonna guestId aggiunta alla tabella matches.');
         }
         if (!matchColumns.selectionMode) {
             await sequelize.getQueryInterface().addColumn('matches', 'selectionMode', {
                 type: 'VARCHAR(255)',
                 allowNull: true
             });
-            console.log('Colonna selectionMode aggiunta alla tabella matches.');
         }
 
-        console.log('Database SQLite sincronizzato con successo.');
-
-        app.listen(3000, () => {
-            console.log('Server in esecuzione sulla porta 3000');
-        });
+        app.listen(3000);
     } catch (error) {
         console.error('Errore DB:', error);
         process.exitCode = 1;
