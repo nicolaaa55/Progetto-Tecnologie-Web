@@ -32,7 +32,14 @@ async function startServer() {
             });
         }
 
-        app.listen(3000);
+        const server = app.listen(3000, () => {
+            console.log('Server avviato su http://localhost:3000');
+        });
+
+        server.on('error', (error) => {
+            console.error('Errore avvio server:', error);
+            process.exitCode = 1;
+        });
     } catch (error) {
         console.error('Errore DB:', error);
         process.exitCode = 1;
