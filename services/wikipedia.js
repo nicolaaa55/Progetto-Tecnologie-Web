@@ -13,12 +13,12 @@ const artistPool = [
     "Max Gazzè", "Daniele Silvestri", "Samuele Bersani", 
 
     "Måneskin", "Pinguini Tattici Nucleari", "Negramaro", "Subsonica", "Afterhours",
-    "Ricchi e Poveri", "Il Volo", "Pooh", "Baustelle", "Verdena", 
+    "Ricchi e Poveri", "Pooh", "Baustelle", "Verdena", 
     "Ministri", "Marlene Kuntz", "Zen Circus", "Articolo 31", "Club Dogo",
 
     "J-Ax", "Fedez", "Salmo (rapper)", "Marracash", "Caparezza", 
     "Fabri Fibra", "Ghali", "Sfera Ebbasta", "Guè", "Lazza", 
-    "Shiva (rapper)", "Geolier", "Madame (cantante)", "Clementino", "Rocco Hunt",
+    "Shiva (rapper)", "Geolier", "Madame (cantante)", "Rocco Hunt",
     "Frankie hi-nrg mc", "Neffa",
 
     "Michael Jackson", "Madonna (cantante)", "Lady Gaga", "Taylor Swift", "Beyoncé", 
