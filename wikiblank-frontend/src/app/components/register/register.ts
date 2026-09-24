@@ -17,7 +17,10 @@ export class Register {
   errorMessage = '';
   successMessage = '';
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+  ) {}
 
   onRegister() {
     if (!this.username || !this.password) {
@@ -36,7 +39,7 @@ export class Register {
       error: (err) => {
         this.errorMessage = err.error.error || 'Errore durante la registrazione.';
         this.successMessage = '';
-      }
+      },
     });
   }
 }

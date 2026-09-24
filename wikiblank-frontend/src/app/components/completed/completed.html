@@ -4,7 +4,9 @@
       <div class="card-body">
         <h2 class="text-center mb-4">Partite concluse</h2>
         <div class="text-end mb-3">
-          <button class="btn btn-outline-dark btn-sm" type="button" (click)="loadMatches()">Aggiorna</button>
+          <button class="btn btn-outline-dark btn-sm" type="button" (click)="loadMatches()">
+            Aggiorna
+          </button>
         </div>
 
         <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
@@ -21,25 +23,31 @@
                 <th>Titolo corretto</th>
                 <th>Tentativi</th>
                 <th>Tempo</th>
-                <th class="d-none d-md-table-cell">Testo scoperto</th>              
+                <th class="d-none d-md-table-cell">Testo scoperto</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let match of matches">
                 <td>{{ match.player }}</td>
                 <td>
-                  <span class="badge" [class.bg-success]="match.status === 'WON'" [class.bg-secondary]="match.status === 'ABANDONED'">
+                  <span
+                    class="badge"
+                    [class.bg-success]="match.status === 'WON'"
+                    [class.bg-secondary]="match.status === 'ABANDONED'"
+                  >
                     {{ match.status === 'WON' ? 'Vinta' : 'Abbandonata' }}
                   </span>
                 </td>
-                <td><strong>{{ match.title }}</strong></td>
+                <td>
+                  <strong>{{ match.title }}</strong>
+                </td>
                 <td>{{ match.attempts }}</td>
                 <td>{{ formatTime(match.durationSeconds) }}</td>
                 <td class="d-none d-md-table-cell">
                   <div class="scrollable-text">
                     {{ match.maskedText }}
                   </div>
-                </td>              
+                </td>
               </tr>
             </tbody>
           </table>

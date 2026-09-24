@@ -1,51 +1,55 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('./database');
+const { DataTypes } = require("sequelize");
+const sequelize = require("./database");
 
-const Match = sequelize.define('Match', {
+const Match = sequelize.define(
+  "Match",
+  {
     id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
     },
     targetTitle: {
-        type: DataTypes.STRING,
-        allowNull: false
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     originalText: {
-        type: DataTypes.TEXT,
-        allowNull: false
+      type: DataTypes.TEXT,
+      allowNull: false,
     },
     guestId: {
-        type: DataTypes.STRING,
-        allowNull: true
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     selectionMode: {
-        type: DataTypes.STRING,
-        allowNull: true
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     guessedWords: {
-        type: DataTypes.JSON, 
-        defaultValue: []
+      type: DataTypes.JSON,
+      defaultValue: [],
     },
     attempts: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
     },
     startTime: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
     },
     endTime: {
-        type: DataTypes.DATE,
-        allowNull: true
+      type: DataTypes.DATE,
+      allowNull: true,
     },
     status: {
-        type: DataTypes.ENUM('IN_PROGRESS', 'WON', 'ABANDONED'),
-        defaultValue: 'IN_PROGRESS'
-    }
-}, {
-    tableName: 'matches',
-    timestamps: false
-});
+      type: DataTypes.ENUM("IN_PROGRESS", "WON", "ABANDONED"),
+      defaultValue: "IN_PROGRESS",
+    },
+  },
+  {
+    tableName: "matches",
+    timestamps: false,
+  },
+);
 
 module.exports = Match;

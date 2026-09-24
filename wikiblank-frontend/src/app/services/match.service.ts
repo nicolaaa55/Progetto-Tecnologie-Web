@@ -3,14 +3,18 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { retry, timeout } from 'rxjs/operators';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class MatchService {
-  private baseUrl = 'http://localhost:3000/api/matches';
+  private baseUrl = `${environment.apiUrl}/matches`;
 
-  constructor(private http: HttpClient, private authService: AuthService) { }
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService,
+  ) {}
 
   private getGuestId(): string {
     let guestId = localStorage.getItem('guestId');
@@ -23,21 +27,21 @@ export class MatchService {
 
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
-    return token
-      ? new HttpHeaders({ 'Authorization': `Bearer ${token}` })
-      : new HttpHeaders();
+    return token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : new HttpHeaders();
   }
 
   getLeaderboard(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/leaderboard?t=${Date.now()}`).pipe(
-      retry({ count: 2, delay: 300 })
-    );
+    return this.http
+      .get(`${this.baseUrl}/leaderboard?t=${Date.now()}`)
+      .pipe(retry({ count: 2, delay: 300 }));
   }
 
   getCompletedMatches(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/completed?t=${Date.now()}`, { headers: this.getHeaders().set('X-Guest-Id', this.getGuestId()) }).pipe(
-      retry({ count: 2, delay: 300 })
-    );
+    return this.http
+      .get(`${this.baseUrl}/completed?t=${Date.now()}`, {
+        headers: this.getHeaders().set('X-Guest-Id', this.getGuestId()),
+      })
+      .pipe(retry({ count: 2, delay: 300 }));
   }
 
   async startNewMatch(): Promise<any> {
@@ -50,7 +54,7 @@ export class MatchService {
     const response = await fetch(`${this.baseUrl}/new`, {
       method: 'POST',
       headers,
-      body: '{}'
+      body: '{}',
     });
     const body = await response.json();
 
@@ -62,12 +66,20 @@ export class MatchService {
   }
 
   makeGuess(matchId: number, guessWord: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/${matchId}/guess`, { guess: guessWord }, { headers: this.getHeaders().set('X-Guest-Id', this.getGuestId()) });
+    return this.http.post(
+      `${this.baseUrl}/${matchId}/guess`,
+      { guess: guessWord },
+      { headers: this.getHeaders().set('X-Guest-Id', this.getGuestId()) },
+    );
   }
 
   abandonMatch(matchId: number): Observable<any> {
-    return this.http.post(`${this.baseUrl}/${matchId}/abandon`, {}, { headers: this.getHeaders().set('X-Guest-Id', this.getGuestId()) }).pipe(
-      timeout(10000)
-    );
+    return this.http
+      .post(
+        `${this.baseUrl}/${matchId}/abandon`,
+        {},
+        { headers: this.getHeaders().set('X-Guest-Id', this.getGuestId()) },
+      )
+      .pipe(timeout(10000));
   }
 }

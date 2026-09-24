@@ -2,9 +2,11 @@
   <div class="col-md-8">
     <div class="card shadow">
       <div class="card-body">
-        <h2 class="text-center mb-4">🏆 Classifica Giocatori</h2>
+        <h2 class="text-center mb-4">Classifica Giocatori</h2>
         <div class="text-end mb-3">
-          <button class="btn btn-outline-dark btn-sm" type="button" (click)="loadLeaderboard()">Aggiorna</button>
+          <button class="btn btn-outline-dark btn-sm" type="button" (click)="loadLeaderboard()">
+            Aggiorna
+          </button>
         </div>
 
         <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
@@ -24,13 +26,14 @@
             <tbody>
               <tr *ngFor="let player of leaderboardList; let i = index">
                 <th scope="row">
-                  <span *ngIf="i === 0">🥇</span>
-                  <span *ngIf="i === 1">🥈</span>
-                  <span *ngIf="i === 2">🥉</span>
-                  <span *ngIf="i > 0">{{ i + 1 }}</span>
+                  {{ i + 1 }}
                 </th>
-                <td><strong>{{ player.username }}</strong></td>
-                <td class="text-center"><span class="badge bg-success">{{ player.wonMatchesCount }}</span></td>
+                <td>
+                  <strong>{{ player.username }}</strong>
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-success">{{ player.wonMatchesCount }}</span>
+                </td>
                 <td class="text-center">{{ player.averageTimeSeconds }}s</td>
               </tr>
             </tbody>
@@ -42,7 +45,6 @@
             <p>Nessuna partita vinta registrata al momento. Gioca e conquista il primo posto!</p>
           </div>
         </ng-template>
-
       </div>
     </div>
   </div>

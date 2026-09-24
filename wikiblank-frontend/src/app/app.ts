@@ -10,7 +10,7 @@ import { Router } from '@angular/router';
   imports: [CommonModule, RouterOutlet, RouterLink],
   template: `
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 px-3">
-      <a class="navbar-brand" routerLink="/game">🎹 WIKIBLANK</a>
+      <a class="navbar-brand" routerLink="/game">WIKIBLANK</a>
       <div class="collapse navbar-collapse show">
         <ul class="navbar-nav me-auto">
           <li class="nav-item">
@@ -26,10 +26,14 @@ import { Router } from '@angular/router';
         <ul class="navbar-nav align-items-center">
           <ng-container *ngIf="authService.isLoggedIn(); else guestLinks">
             <li class="nav-item">
-              <span class="navbar-text text-white me-3">Benvenuto, {{ authService.getUsername() }}!</span>
+              <span class="navbar-text text-white me-3"
+                >Benvenuto, {{ authService.getUsername() }}!</span
+              >
             </li>
             <li class="nav-item">
-              <button class="btn btn-outline-light btn-sm" type="button" (click)="logout()">Esci</button>
+              <button class="btn btn-outline-light btn-sm" type="button" (click)="logout()">
+                Esci
+              </button>
             </li>
           </ng-container>
           <ng-template #guestLinks>
@@ -47,10 +51,13 @@ import { Router } from '@angular/router';
     <div class="container">
       <router-outlet></router-outlet>
     </div>
-  `
+  `,
 })
 export class App {
-  constructor(public authService: AuthService, private router: Router) {}
+  constructor(
+    public authService: AuthService,
+    private router: Router,
+  ) {}
 
   logout() {
     this.authService.logout();

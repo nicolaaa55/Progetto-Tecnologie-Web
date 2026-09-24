@@ -16,7 +16,10 @@ export class Login {
   password = '';
   errorMessage = '';
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+  ) {}
 
   onLogin() {
     if (!this.username || !this.password) {
@@ -31,7 +34,7 @@ export class Login {
       },
       error: (err) => {
         this.errorMessage = err.error.error || 'Credenziali non valide.';
-      }
+      },
     });
   }
 }

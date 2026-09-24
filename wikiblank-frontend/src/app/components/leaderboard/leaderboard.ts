@@ -13,7 +13,10 @@ export class Leaderboard implements OnInit {
   leaderboardList: any[] = [];
   errorMessage: string = '';
 
-  constructor(private matchService: MatchService, private changeDetector: ChangeDetectorRef) {}
+  constructor(
+    private matchService: MatchService,
+    private changeDetector: ChangeDetectorRef,
+  ) {}
 
   ngOnInit() {
     this.loadLeaderboard();
@@ -28,7 +31,7 @@ export class Leaderboard implements OnInit {
       error: () => {
         this.errorMessage = 'Errore nel caricamento della classifica.';
         this.changeDetector.detectChanges();
-      }
+      },
     });
   }
 }

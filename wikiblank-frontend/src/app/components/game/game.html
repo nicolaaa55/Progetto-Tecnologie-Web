@@ -2,39 +2,62 @@
   <div class="col-md-8">
     <div class="card shadow">
       <div class="card-body">
-        <h2 class="text-center mb-4">🎹 Wikiblank Game</h2>
+        <h2 class="text-center mb-4">Wikiblank Game</h2>
 
-        <div *ngIf="status === 'IDLE' || status === 'WON' || status === 'ABANDONED'" class="text-center mb-4">
-          <button class="btn btn-primary btn-lg" (click)="startNewGame()" [disabled]="isStarting">
-            {{ isStarting ? 'Caricamento...' : (status !== 'IDLE' ? 'Gioca Ancora' : 'Inizia Nuova Partita') }}
+        <div
+          *ngIf="stato === 'IDLE' || stato === 'WON' || stato === 'ABANDONED'"
+          class="text-center mb-4"
+        >
+          <button class="btn btn-primary btn-lg" (click)="startNewGame()" [disabled]="inAvvio">
+            {{
+              inAvvio
+                ? 'Caricamento...'
+                : stato !== 'IDLE'
+                  ? 'Gioca Ancora'
+                  : 'Inizia Nuova Partita'
+            }}
           </button>
         </div>
 
-        <div *ngIf="message" class="alert alert-info text-center" role="alert">
-          {{ message }}
+        <div *ngIf="messaggio" class="alert alert-info text-center" role="alert">
+          {{ messaggio }}
         </div>
 
-        <div *ngIf="status === 'IN_PROGRESS' || status === 'WON' || status === 'ABANDONED'">
+        <div *ngIf="stato === 'IN_PROGRESS' || stato === 'WON' || stato === 'ABANDONED'">
           <div class="d-flex justify-content-between mb-3 text-muted">
-            <span>Tentativi falliti/effettuati: <strong>{{ attempts }}</strong></span>
-            <span class="badge bg-secondary" *ngIf="status === 'IN_PROGRESS'">In corso</span>
-            <span class="badge bg-success" *ngIf="status === 'WON'">Vinta!</span>
-            <span class="badge bg-secondary" *ngIf="status === 'ABANDONED'">Abbandonata</span>
+            <span
+              >Tentativi falliti/effettuati: <strong>{{ tentativi }}</strong></span
+            >
+            <span class="badge bg-secondary" *ngIf="stato === 'IN_PROGRESS'">In corso</span>
+            <span class="badge bg-success" *ngIf="stato === 'WON'">Vinta!</span>
+            <span class="badge bg-secondary" *ngIf="stato === 'ABANDONED'">Abbandonata</span>
           </div>
 
-          <div class="p-3 bg-light border rounded mb-4" style="white-space: pre-wrap; font-family: monospace; max-height: 300px; overflow-y: auto;">
-            {{ maskedText }}
+          <div class="testo-mascherato p-3 bg-light border rounded mb-4">
+            {{ testoMascherato }}
           </div>
 
-          <form *ngIf="status === 'IN_PROGRESS'" (ngSubmit)="makeGuess()" class="input-group mb-3">
-            <input type="text" class="form-control" placeholder="Inserisci una parola o il nome dell'artista..." [(ngModel)]="guessWord" name="guessWord" required>
-            <button class="btn btn-dark" type="submit">Prova</button>
-          </form>
-          <button *ngIf="status === 'IN_PROGRESS'" class="btn btn-outline-danger" type="button" (click)="abandonGame()" [disabled]="isAbandoning">
-            {{ isAbandoning ? 'Abbandono...' : 'Abbandona partita' }}
+          <div *ngIf="stato === 'IN_PROGRESS'" class="input-group mb-3">
+            <input
+              type="text"
+              class="form-control"
+              name="guessWord"
+              placeholder="Inserisci una parola o il nome dell'artista..."
+              [(ngModel)]="parolaTentata"
+              (keyup.enter)="inviaTentativo()"
+            />
+            <button class="btn btn-dark" type="button" (click)="inviaTentativo()">Prova</button>
+          </div>
+          <button
+            *ngIf="stato === 'IN_PROGRESS'"
+            class="btn btn-outline-danger"
+            type="button"
+            (mousedown)="abbandonaPartita()"
+            [disabled]="inAbbandono"
+          >
+            {{ inAbbandono ? 'Abbandono...' : 'Abbandona partita' }}
           </button>
         </div>
-
       </div>
     </div>
   </div>

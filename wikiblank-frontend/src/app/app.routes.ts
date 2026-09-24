@@ -12,5 +12,5 @@ export const routes: Routes = [
   { path: 'game', component: Game },
   { path: 'leaderboard', component: Leaderboard },
   { path: 'completed', component: Completed },
-  { path: '**', redirectTo: 'game' }
+  { path: '**', redirectTo: 'game' },
 ];

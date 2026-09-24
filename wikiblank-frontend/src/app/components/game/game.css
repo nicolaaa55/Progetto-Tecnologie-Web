@@ -1,0 +1,6 @@
+.testo-mascherato {
+  white-space: pre-wrap;
+  font-family: monospace;
+  max-height: 300px;
+  overflow-y: auto;
+}

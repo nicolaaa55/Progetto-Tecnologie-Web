@@ -12,87 +12,93 @@ import { MatchService } from '../../services/match.service';
   styleUrl: './game.css',
 })
 export class Game implements OnInit {
-  matchId: number | null = null;
-  maskedText: string = '';
-  guessWord: string = '';
-  attempts: number = 0;
-  status: string = 'IDLE';
-  message: string = '';
-  fullText: string = '';
-  isStarting = false;
-  isAbandoning = false;
+  idPartita: number | null = null;
+  testoMascherato = '';
+  parolaTentata = '';
+  tentativi = 0;
+  stato = 'IDLE';
+  messaggio = '';
+  inAvvio = false;
+  inAbbandono = false;
 
-  constructor(private matchService: MatchService, private changeDetector: ChangeDetectorRef) {}
+  constructor(
+    private matchService: MatchService,
+    private rilevatoreCambiamenti: ChangeDetectorRef,
+  ) {}
 
-  ngOnInit() {
-  }
+  ngOnInit() {}
 
   async startNewGame() {
-    if (this.isStarting || this.status === 'IN_PROGRESS') return;
+    if (this.inAvvio || this.stato === 'IN_PROGRESS') return;
 
-    this.isStarting = true;
-    this.message = '';
+    this.inAvvio = true;
+    this.messaggio = '';
 
     try {
-      const response = await this.matchService.startNewMatch();
-      this.matchId = response.matchId;
-      this.maskedText = response.maskedText;
-      this.attempts = 0;
-      this.status = 'IN_PROGRESS';
-      this.message = 'Partita avviata! Indovina il titolo o l\'artista nascosto.';
-      this.guessWord = '';
-      this.fullText = '';
-    } catch (err: any) {
-      this.status = 'IDLE';
-      this.message = err?.error?.error || 'Errore nella creazione della partita.';
+      const risposta = await this.matchService.startNewMatch();
+      this.idPartita = risposta.matchId;
+      this.testoMascherato = risposta.maskedText;
+      this.tentativi = 0;
+      this.stato = 'IN_PROGRESS';
+      this.messaggio = "Partita avviata! Indovina il titolo o l'artista nascosto.";
+      this.parolaTentata = '';
+    } catch (errore: any) {
+      this.stato = 'IDLE';
+      this.messaggio = errore?.error?.error || 'Errore nella creazione della partita.';
     } finally {
-      this.isStarting = false;
-      this.changeDetector.detectChanges();
+      this.inAvvio = false;
+      this.rilevatoreCambiamenti.detectChanges();
     }
   }
 
-  makeGuess() {
-    if (!this.matchId || !this.guessWord.trim()) return;
+  inviaTentativo() {
+    if (!this.idPartita || !this.parolaTentata.trim()) return;
 
-    this.matchService.makeGuess(this.matchId, this.guessWord.trim()).subscribe({
-      next: (response) => {
-        this.status = response.status;
-        this.attempts = response.attempts;
-        this.guessWord = '';
+    this.matchService.makeGuess(this.idPartita, this.parolaTentata.trim()).subscribe({
+      next: (risposta) => {
+        this.stato = risposta.status;
+        this.tentativi = risposta.attempts;
+        this.parolaTentata = '';
 
-        if (response.status === 'WON') {
-          this.maskedText = response.fullText;
-          this.message = `🎉 Complimenti! Hai vinto in ${this.attempts} tentativi!`;
+        if (risposta.status === 'WON') {
+          this.testoMascherato = risposta.fullText;
+          this.messaggio = `Complimenti! Hai vinto in ${this.tentativi} tentativi!`;
         } else {
-          this.maskedText = response.maskedText;
-          this.message = 'Tentativo registrato! Continua così.';
+          this.testoMascherato = risposta.maskedText;
+          this.messaggio = 'Tentativo registrato! Continua così.';
         }
+
+        this.rilevatoreCambiamenti.detectChanges();
       },
-      error: (err) => {
-        this.message = err.error.error || 'Errore durante l\'invio del tentativo.';
-      }
+      error: (errore) => {
+        this.messaggio = errore.error.error || "Errore durante l'invio del tentativo.";
+        this.rilevatoreCambiamenti.detectChanges();
+      },
     });
   }
 
-  abandonGame() {
-    if (!this.matchId || this.isAbandoning) return;
+  abbandonaPartita() {
+    if (!this.idPartita || this.inAbbandono) return;
 
-    this.isAbandoning = true;
-    this.matchService.abandonMatch(this.matchId).pipe(
-      finalize(() => {
-        this.isAbandoning = false;
-        this.changeDetector.detectChanges();
-      })
-    ).subscribe({
-      next: (response) => {
-        this.status = response.status;
-        this.attempts = response.attempts;
-        this.maskedText = response.maskedText;
-        this.message = `Partita abbandonata. Il titolo corretto era: ${response.title}.`;
-      },
-      error: (err) => {
-        this.message = err.error?.error || 'Errore durante l\'abbandono della partita.';
-      }
-    });
+    this.inAbbandono = true;
+    this.matchService
+      .abandonMatch(this.idPartita)
+      .pipe(
+        finalize(() => {
+          this.inAbbandono = false;
+          this.rilevatoreCambiamenti.detectChanges();
+        }),
+      )
+      .subscribe({
+        next: (risposta) => {
+          this.stato = risposta.status;
+          this.tentativi = risposta.attempts;
+          this.testoMascherato = risposta.maskedText;
+          this.messaggio = `Partita abbandonata. Il titolo corretto era: ${risposta.title}.`;
+        },
+        error: (errore) => {
+          this.messaggio = errore.error?.error || "Errore durante l'abbandono della partita.";
+        },
+      });
   }
 }

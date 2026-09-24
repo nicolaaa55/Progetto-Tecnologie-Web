@@ -7,13 +7,16 @@ import { MatchService } from '../../services/match.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './completed.html',
-  styleUrl: './completed.css'
+  styleUrl: './completed.css',
 })
 export class Completed implements OnInit {
   matches: any[] = [];
   errorMessage = '';
 
-  constructor(private matchService: MatchService, private changeDetector: ChangeDetectorRef) {}
+  constructor(
+    private matchService: MatchService,
+    private changeDetector: ChangeDetectorRef,
+  ) {}
 
   ngOnInit() {
     this.loadMatches();
@@ -44,7 +47,9 @@ export class Completed implements OnInit {
     const remainingHours = hours % 24;
 
     if (days < 30) {
-      return remainingHours > 0 ? `${days} giorni, ${remainingHours}h` : `${days} giorn${days === 1 ? 'o' : 'i'}`;
+      return remainingHours > 0
+        ? `${days} giorni, ${remainingHours}h`
+        : `${days} giorn${days === 1 ? 'o' : 'i'}`;
     }
 
     const months = Math.floor(days / 30);
@@ -65,7 +70,7 @@ export class Completed implements OnInit {
       error: () => {
         this.errorMessage = 'Errore nel caricamento delle partite concluse.';
         this.changeDetector.detectChanges();
-      }
+      },
     });
   }
 }

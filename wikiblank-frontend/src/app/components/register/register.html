@@ -14,20 +14,30 @@
         <form (ngSubmit)="onRegister()">
           <div class="mb-3">
             <label class="form-label">Username</label>
-            <input type="text" class="form-control" [(ngModel)]="username" name="username" required>
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="username"
+              name="username"
+              required
+            />
           </div>
 
           <div class="mb-3">
             <label class="form-label">Password</label>
-            <input type="password" class="form-control" [(ngModel)]="password" name="password" required>
+            <input
+              type="password"
+              class="form-control"
+              [(ngModel)]="password"
+              name="password"
+              required
+            />
           </div>
 
           <button type="submit" class="btn btn-dark w-100">Registrati</button>
         </form>
 
-        <p class="text-center mt-3">
-          Hai già un account? <a routerLink="/login">Accedi qui</a>
-        </p>
+        <p class="text-center mt-3">Hai già un account? <a routerLink="/login">Accedi qui</a></p>
       </div>
     </div>
   </div>
