@@ -18,10 +18,11 @@ da articoli di Wikipedia dedicati ad artisti.
 
 ## Configurazione
 
-Il backend richiede un file `.env` nella cartella principale del progetto. Crearlo copiando `.env.example` e impostando una chiave
+Il backend richiede un file `.env` nella cartella `backend`. Crearlo copiando `backend/.env.example` e impostando una chiave
 segreta per i token JWT:
 
 ```powershell
+cd backend
 copy .env.example .env
 ```
 
@@ -40,13 +41,13 @@ PORT=3000
 la porta `3000`.
 
 Se si modifica `PORT`, aggiornare allo stesso modo l'URL API in
-`wikiblank-frontend/src/environments/environment.ts`.
+`frontend/src/environments/environment.ts`.
 
 Il file `.env` e' escluso dal controllo versione. Il database SQLite
-`wikiblank.sqlite` viene creato automaticamente all'avvio del backend.
+`backend/wikiblank.sqlite` viene creato automaticamente all'avvio del backend.
 
 L'indirizzo dell'API utilizzato dal frontend e' configurato in
-`wikiblank-frontend/src/environments/environment.ts` e, in ambiente locale,
+`frontend/src/environments/environment.ts` e, in ambiente locale,
 deve corrispondere a `http://localhost:3000/api`.
 
 ## Installazione
@@ -54,25 +55,27 @@ deve corrispondere a `http://localhost:3000/api`.
 Dalla cartella principale del progetto:
 
 ```powershell
+cd backend
 npm install
-cd wikiblank-frontend
+cd ..\frontend
 npm install
 ```
 
 ## Avvio
 
-Avviare il backend dalla cartella principale:
+Avviare il backend dalla cartella `backend`:
 
 ```powershell
+cd backend
 npm start
 ```
 
 Il backend sara' disponibile su `http://localhost:3000`.
 
-In un secondo terminale, avviare il frontend dalla cartella
-`wikiblank-frontend`:
+In un secondo terminale, avviare il frontend dalla cartella `frontend`:
 
 ```powershell
+cd frontend
 npm start
 ```
 
@@ -80,7 +83,7 @@ Il frontend sara' disponibile su `http://localhost:4200`.
 
 ## Build e test
 
-I comandi seguenti vanno eseguiti dalla cartella `wikiblank-frontend`:
+I comandi seguenti vanno eseguiti dalla cartella `frontend`:
 
 ```powershell
 npm run build
