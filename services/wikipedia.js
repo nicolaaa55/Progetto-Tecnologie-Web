@@ -158,7 +158,6 @@ const artistPool = [
   "Megadeth",
   "Slayer",
   "Anthrax",
-  "Pantera",
   "Mötley Crüe",
   "Kiss (gruppo musicale)",
   "Alice Cooper",
